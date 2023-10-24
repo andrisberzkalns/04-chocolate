@@ -1,204 +1,242 @@
 import {
-  AccumulativeShadows,
-  CameraControls,
-  Center,
-  RandomizedLight,
-  MeshPortalMaterial,
   ScrollControls,
-  Edges,
-  Scroll,
   useScroll,
-  View,
-  useGLTF,
   SoftShadows,
   PerspectiveCamera,
   KeyboardControlsEntry,
   KeyboardControls,
   useKeyboardControls,
+  Html,
+  Float,
 } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
   Suspense,
+  useContext,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useReducer,
   useRef,
   useState,
 } from "react";
-import { easing } from "maath";
-import { proxy, useSnapshot } from "valtio";
-import { state } from "~/store";
-import * as THREE from "three";
-// import useRefs from "~/hooks/useRefs";
-import useRefs from "react-use-refs";
-import { PergaleDark } from "./PergaleDark";
-import { PergaleCranberries } from "./PergaleCranberries";
 import Models from "./Model";
 import { Button } from "~/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { Events, scrollSpy, animateScroll as scroll } from "react-scroll";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import React from "react";
+// import { DataContext } from "~/lib/contexts/dataContext";
+import { useSelector, useDispatch } from "react-redux";
+import { setOffset, next, previous, set } from "~/lib/slices/dataSlice";
+import { RootState } from "~/lib/store";
 
-enum Controls {
-  left = "left",
-  right = "right",
-}
+export default () => {
+  const items = useSelector((state: RootState) => state.data.items);
 
-export default ({ position = [0, 0, 5], fov = 25 }) => {
-  const [ref, view1, view2, view3, view4] = useRefs();
+  //   const sceneRef = useRef<SceneRefType>(null);
 
-  const scrollTo = () => {
-    scroll.scrollMore(100); // Scrolling to 100px from the top of the page.
-  };
+  //   const [sub] = useKeyboardControls<Controls>();
 
-  const map = useMemo<KeyboardControlsEntry<Controls>[]>(
-    () => [
-      { name: Controls.left, keys: ["ArrowLeft", "KeyA"] },
-      { name: Controls.right, keys: ["ArrowRight", "KeyD"] },
-    ],
-    [],
-  );
+  //   const next = () => {
+  //     const fromTopMap = getScrollPositionArray(
+  //       scroll.el.clientHeight,
+  //       MODEL_COUNT,
+  //     );
+
+  //     if (selectedIndex < fromTopMap.length) {
+  //       // setSelectedIndex((current) => {
+  //       const newSelectedElement = selectedIndex + 1;
+  //       if (newSelectedElement > fromTopMap.length - 1) return;
+  //       setSelectedIndex(newSelectedElement);
+  //       // return newSelectedElement;
+  //       //   });
+  //     }
+  //   };
+
+  //   const previous = () => {
+  //     const fromTopMap = getScrollPositionArray(
+  //       scroll.el.clientHeight,
+  //       MODEL_COUNT,
+  //     );
+
+  //     if (selectedIndex < fromTopMap.length) {
+  //       // setSelectedIndex((current) => {
+  //       const newSelectedElement = selectedIndex - 1;
+  //       if (newSelectedElement < 0) return;
+  //       setSelectedIndex(newSelectedElement);
+  //       // return newSelectedElement;
+  //       //   });
+  //     }
+  //   };
 
   return (
     <>
-      <div className="absolute z-10 w-full p-4 align-middle">
-        <Button onClick={() => {}}>
-          <ArrowLeft />
-        </Button>
-        <Button className="float-right" onClick={scrollTo}>
-          <ArrowRight />
-        </Button>
-      </div>
-      <KeyboardControls map={map}>
-        <Canvas
-          id="scroller"
-          className="absolute left-0 top-0 h-[100vh] w-[100vw]"
-          shadows
-          gl={{ preserveDrawingBuffer: true }}
-          eventPrefix="client"
-        >
-          {/* <CameraControls
-          minPolarAngle={Math.PI / 2}
-          maxPolarAngle={Math.PI / 2}
-          maxAzimuthAngle={Math.PI / 4}
-          minAzimuthAngle={-Math.PI / 4}
-          truckSpeed={0}
-          minDistance={3}
-          maxDistance={10}
-        /> */}
-          <ScrollControls infinite pages={3} damping={0.5} distance={1}>
-            <Scene />
-          </ScrollControls>
-        </Canvas>
-      </KeyboardControls>
+      <Canvas
+        id="scroller"
+        className="absolute left-0 top-0 h-screen w-screen"
+        shadows
+        gl={{ preserveDrawingBuffer: true }}
+        eventPrefix="client"
+      >
+        <ScrollControls pages={items.length} damping={0.5} distance={1}>
+          <Scene />
+        </ScrollControls>
+      </Canvas>
+      <ButtonSelectors />
+      <BottomSelector />
     </>
   );
 };
 
-interface CameraPayload {
-  position: [number, number, number];
-  fov: number;
-  rotation: [number, number, number];
-}
-
-enum StateReducerActions {
-  SET_OFFSET = "SET_OFFSET",
-  SET_CAMERA = "SET_CAMERA",
-}
-
-interface StateAction {
-  type: StateReducerActions;
-  payload: any;
-}
-
-interface State {
-  offset: number;
-  camera: CameraPayload;
-}
-
-const stateReducer = (state: State, action: StateAction) => {
-  const { type, payload } = action;
-
-  switch (type) {
-    case "SET_OFFSET":
-      return { ...state, offset: action.payload };
-    case "SET_CAMERA":
-      return { ...state, camera: action.payload };
-    default:
-      return state;
-  }
-};
-
-const Scene: React.FC<any> = ({
-  rotation = [0, 0, 0],
-  bg = "#f0f0f0",
-  elmt = "#000",
-  index = 0,
-  length = 1,
-}) => {
-  let selectedElement = -1;
-  const fromTopMap = [641, 1924, 3207];
-
-  const mesh = useRef(null);
-  const cameraRef = useRef(null);
-  const scroll = useScroll();
-  const [state, dispatch] = useReducer(stateReducer, {
-    offset: 0,
-    camera: {
-      position: [0, 0, 16],
-      fov: 22.895,
-      rotation: [0, 0, 0],
-    },
-  });
-  const [sub, get] = useKeyboardControls<Controls>();
-
-  useFrame((state, delta) => {
-    // The offset is between 0 and 1, you can apply it to your models any way you like
-    dispatch({
-      type: StateReducerActions.SET_OFFSET,
-      payload: scroll.offset,
-    });
-  });
-
-  useEffect(() => {
-    return sub(
-      (state) => state.right,
-      (pressed) => {
-        if (!pressed) return;
-
-        selectedElement++;
-        console.log(selectedElement);
-        console.log(scroll.el.clientHeight);
-        if (fromTopMap.length < selectedElement + 1) {
-          selectedElement--;
-        }
-        scroll.el.scrollTo({ top: fromTopMap[selectedElement] });
-      },
-    );
-  }, []);
-
-  useEffect(() => {
-    return sub(
-      (state) => state.left,
-      (pressed) => {
-        if (!pressed) return;
-
-        selectedElement--;
-        console.log(selectedElement);
-        console.log(scroll.el.clientHeight);
-        if (selectedElement < 0) {
-          selectedElement = 0;
-        }
-        scroll.el.scrollTo({ top: fromTopMap[selectedElement] });
-      },
-    );
-  }, []);
-
-  useEffect(() => {}, []);
+const ButtonSelectors: React.FC = () => {
+  const dispatch = useDispatch();
+  const items = useSelector((state: RootState) => state.data.items);
+  const selectedIndex = useSelector(
+    (state: RootState) => state.data.selectedIndex,
+  );
 
   return (
-    <mesh ref={mesh} position={[0, 0, 0]}>
-      <group ref={cameraRef}>
+    <>
+      <div className="absolute top-0 flex h-full">
+        <Button
+          disabled={selectedIndex === 0}
+          className="my-auto ml-4 bg-black bg-opacity-0 px-3 py-10 hover:bg-black hover:bg-opacity-10 focus:bg-black focus:bg-opacity-0 active:bg-black"
+          onClick={() => dispatch(previous())}
+        >
+          <ChevronLeft size={32} strokeWidth={3} />
+        </Button>
+      </div>
+      <div className="absolute right-0 top-0 flex h-full">
+        <Button
+          disabled={selectedIndex === items.length - 1}
+          className="my-auto mr-4 bg-black bg-opacity-0 px-3 py-10 hover:bg-black hover:bg-opacity-10 focus:bg-black focus:bg-opacity-0 active:bg-black"
+          onClick={() => dispatch(next())}
+        >
+          <ChevronRight size={32} strokeWidth={3} />
+        </Button>
+      </div>
+    </>
+  );
+};
+
+const BottomSelector: React.FC = () => {
+  const dispatch = useDispatch();
+  const items = useSelector((state: RootState) => state.data.items);
+  const selectedIndex = useSelector(
+    (state: RootState) => state.data.selectedIndex,
+  );
+
+  const Bar: React.FC<{
+    selected?: boolean;
+    mini?: boolean;
+    onClick?: () => void;
+  }> = ({ selected = false, mini = false, onClick = () => {} }) => {
+    return (
+      <div
+        onClick={onClick}
+        className={`relative h-16 ${
+          mini ? "w-2" : "w-full hover:cursor-pointer"
+        }`}
+      >
+        <div
+          className={`absolute bottom-2 h-2 w-full rounded-lg bg-white ${
+            selected ? "h-2 bg-opacity-90" : "bg-opacity-30 hover:bg-opacity-40"
+          }`}
+        ></div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="absolute bottom-0 mb-4 w-full px-4">
+      <div className="mx-auto flex max-w-[720px] flex-row gap-4">
+        <div className="flex flex-1 justify-end gap-4">
+          {items
+            .filter((_, index) => index < selectedIndex - 1)
+            .map((item) => (
+              <Bar key={item.key} mini />
+            ))}
+          {items
+            .filter((_, index) => index == selectedIndex - 1)
+            .map((item) => (
+              <Bar key={item.key} onClick={() => dispatch(previous())} />
+            ))}
+        </div>
+
+        <div className="flex-1">
+          <Bar selected />
+        </div>
+        <div className="jsutify-start flex flex-1 gap-4">
+          {items
+            .filter((_, index) => index == selectedIndex + 1)
+            .map((item) => (
+              <Bar key={item.key} onClick={() => dispatch(next())} />
+            ))}
+          {items
+            .filter((_, index) => index > selectedIndex + 1)
+            .map((item) => (
+              <Bar key={item.key} mini />
+            ))}
+        </div>
+
+        {/* {items.map((_, index) => (
+          <div
+            key={_.key}
+            onClick={() => dispatch(set(index))}
+            className={`h-2 ${
+              selectedIndex > index + 1 || selectedIndex < index - 1
+                ? "w-8"
+                : "w-28"
+            } rounded-lg bg-white hover:cursor-pointer hover:bg-opacity-60 ${
+              selectedIndex == index ? `bg-white` : `bg-white bg-opacity-40`
+            }`}
+          ></div>
+        ))} */}
+      </div>
+    </div>
+  );
+};
+
+type SceneProps = {};
+
+const getScrollPositionArray = (clientHeight: number, length: number) => {
+  const arr = [];
+  const step = clientHeight / length;
+  for (let i = 1; i < length * 2; i += 2) {
+    arr.push(step * i * 2);
+  }
+  return arr;
+};
+
+const Scene: React.FC<SceneProps> = (props) => {
+  const items = useSelector((state: RootState) => state.data.items);
+  const offset = useSelector((state: RootState) => state.data.offset);
+  const selectedIndex = useSelector(
+    (state: RootState) => state.data.selectedIndex,
+  );
+  const dispatch = useDispatch();
+  const cameraRef = useRef(null);
+  const scroll = useScroll();
+
+  useFrame((state, delta) => {
+    dispatch(setOffset(scroll.offset));
+  });
+
+  useEffect(() => {
+    const fromTopMap = getScrollPositionArray(
+      scroll.el.clientHeight,
+      items.length,
+    );
+
+    const newScrollHeight = fromTopMap[selectedIndex];
+    scroll.el.scrollTo({ top: newScrollHeight });
+    console.log(selectedIndex);
+  }, [selectedIndex]);
+
+  return (
+    <mesh>
+      <group>
         <PerspectiveCamera
+          ref={cameraRef}
           name="Camera"
           makeDefault={true}
           far={100}
@@ -207,14 +245,13 @@ const Scene: React.FC<any> = ({
           position={[0, 0, 16]}
         />
       </group>
-
-      <directionalLight castShadow position={[0, 0, 16]} intensity={0.5} />
-      <spotLight position={[-2, 4, 6]} intensity={6} />
-      <spotLight position={[3, 4, 6]} intensity={6} />
-      <ambientLight intensity={0.5} />
+      <directionalLight castShadow position={[0, 0, 16]} intensity={0.8} />
+      <spotLight position={[-2, 4, 6]} intensity={8} />
+      <spotLight position={[3, 4, 6]} intensity={8} />
+      <ambientLight intensity={1} />
       <Suspense fallback={null}>
         <SoftShadows size={10} focus={0.5} samples={20} />
-        <Models offset={state.offset} cameraRef={cameraRef} />
+        <Models offset={offset} cameraRef={cameraRef} />
       </Suspense>
     </mesh>
   );
