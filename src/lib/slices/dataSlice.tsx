@@ -8,6 +8,7 @@ type ItemDataType = {
   subtitle: string;
   description: string;
   source: string;
+  bg: string;
 };
 
 export interface DataState {
@@ -22,7 +23,7 @@ export interface DataState {
 
 const initialState: DataState = {
   offset: 0,
-  selectedIndex: -1,
+  selectedIndex: 0,
   items: defaultData,
 };
 

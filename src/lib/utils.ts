@@ -28,3 +28,15 @@ export const visibleWidthAtZDepth = (
   const height = visibleHeightAtZDepth(depth, camera);
   return height * camera.aspect;
 };
+
+export const getScrollPositionArray = (
+  clientHeight: number,
+  length: number,
+) => {
+  const arr = [];
+  const step = clientHeight;
+  for (let i = 0; i < length; i++) {
+    arr.push(step * i + step / 2);
+  }
+  return arr;
+};

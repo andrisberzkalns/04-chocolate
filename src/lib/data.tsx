@@ -1,4 +1,5 @@
 enum ChocolateTypes {
+  title = "title",
   pergale_dark = "pergale_dark",
   pergale_cranberries = "pergale_cranberries",
   pergale_forestberries = "pergale_forestberries",
@@ -7,40 +8,50 @@ enum ChocolateTypes {
 
 const data = [
   {
-    isSelected: false,
-    key: ChocolateTypes.pergale_dark,
-    label: "1",
-    title: "Pergalė Dark",
-    subtitle: "Dark Chocolate",
-    description: "",
+    key: ChocolateTypes.title,
+    label: "Home",
+    title: "Chocolate",
+    subtitle: "Challenge",
+    description:
+      "Adding a new\nchocolate bar\nto this website\nuntil a company\nsends me a box\nof chocolates.",
     source: "/assets/pergale_dark.glb",
+    bg: "teal",
   },
   {
-    isSelected: false,
+    key: ChocolateTypes.pergale_dark,
+    label: "Dark Chocolate",
+    title: "Pergalė Dark",
+    subtitle: "Dark Chocolate",
+    description: "27.11.2023",
+    source: "/assets/pergale_dark.glb",
+    bg: "steelblue",
+  },
+  {
     key: ChocolateTypes.pergale_cranberries,
-    label: "2",
+    label: "Cranberries",
     title: "Pergalė Dark",
     subtitle: "Chocolate with\nCranberries",
     description: "",
     source: "/assets/pergale_cranberries.glb",
+    bg: "crimson",
   },
   {
-    isSelected: false,
     key: ChocolateTypes.pergale_forestberries,
-    label: "3",
+    label: "Forest Berries",
     title: "Pergalė Milk",
     subtitle: "Forest Berries",
     description: "",
     source: "/assets/pergale_forestberries.glb",
+    bg: "purple",
   },
   {
-    isSelected: false,
     key: ChocolateTypes.pergale_grilyazh,
-    label: "4",
+    label: "Grilyazh",
     title: "Pergalė Milk",
     subtitle: "Grilyazh",
     description: "",
     source: "/assets/pergale_grilyazh.glb",
+    bg: "maroon",
   },
 ];
 
