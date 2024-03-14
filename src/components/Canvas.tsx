@@ -17,7 +17,7 @@ import { BottomSelector } from "~/components/ui/BottomSelector";
 import { ButtonSelector } from "~/components/ui/ButtonSelector";
 import { getScrollPositionArray } from "~/lib/utils";
 
-export default () => {
+const CustomCanvas = () => {
   const items = useSelector((state: RootState) => state.data.items);
   return (
     <>
@@ -104,3 +104,5 @@ const Scene: React.FC = () => {
     </mesh>
   );
 };
+
+export default CustomCanvas;

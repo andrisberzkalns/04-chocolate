@@ -34,50 +34,45 @@ type ModelsProps = {
 type useModelOutput = {
   groupRef: React.RefObject<THREE.Group>;
   nodes: GLTFResult["nodes"];
-  actions: {
-    [x: string]: THREE.AnimationAction | null;
-  };
+  actions: Record<string, THREE.AnimationAction | null>;
   materials: GLTFResult["materials"];
 };
 
-const useModels = (sources: string[]): useModelOutput[] => {
-  const getModel = (source: string): useModelOutput => {
-    const { nodes, materials, animations } = useGLTF(source) as GLTFResult;
-    const group = useRef<THREE.Group>(null);
-    const animation = useAnimations<THREE.AnimationClip>(animations, group);
+const ModelFile = (source: string): useModelOutput => {
+  const { nodes, materials, animations } = useGLTF(source) as GLTFResult;
+  const group = useRef<THREE.Group>(null);
+  const animation = useAnimations<THREE.AnimationClip>(animations, group);
 
-    if (animation.clips.length < 0) {
-      throw new Error("No animation clips found");
-    }
+  if (animation.clips.length < 0) {
+    throw new Error("No animation clips found");
+  }
 
-    return {
-      groupRef: group,
-      nodes: nodes,
-      materials: materials,
-      actions: animation.actions,
-    };
+  return {
+    groupRef: group,
+    nodes: nodes,
+    materials: materials,
+    actions: animation.actions,
   };
-
-  return sources.map((source) => getModel(source));
 };
 
-const useCamerasActions = (
+const ModelsFiles = (sources: string[]): useModelOutput[] => {
+  return sources.map((source) => ModelFile(source));
+};
+
+const GetCameraActions = (
+  source: string,
+  cameraRef: React.RefObject<THREE.Camera>,
+) => {
+  const { animations } = useGLTF(source) as GLTFResult;
+  const { actions } = useAnimations<THREE.AnimationClip>(animations, cameraRef);
+  return actions;
+};
+
+const CamerasActions = (
   sources: string[],
   cameraRef: React.RefObject<THREE.Camera>,
 ) => {
-  const getCameraActions = (
-    source: string,
-    cameraRef: React.RefObject<THREE.Camera>,
-  ) => {
-    const { animations } = useGLTF(source) as GLTFResult;
-    const { actions } = useAnimations<THREE.AnimationClip>(
-      animations,
-      cameraRef,
-    );
-    return actions;
-  };
-
-  return sources.map((source) => getCameraActions(source, cameraRef));
+  return sources.map((source) => GetCameraActions(source, cameraRef));
 };
 
 const ModelHandler: React.FC<ModelsProps> = ({ offset, cameraRef }) => {
@@ -89,8 +84,8 @@ const ModelHandler: React.FC<ModelsProps> = ({ offset, cameraRef }) => {
   // const { items } = useContext(DataContext);
   const [chipRotation, setChipRotation] = useState(0 as number);
   const [bg, setBg] = useState("cyan" as string);
-  const models = useModels(items.map((item) => item.source));
-  const cameras = useCamerasActions(
+  const models = ModelsFiles(items.map((item) => item.source));
+  const cameras = CamerasActions(
     [
       "/assets/camera_0.glb",
       "/assets/camera_1.glb",
@@ -135,7 +130,7 @@ const ModelHandler: React.FC<ModelsProps> = ({ offset, cameraRef }) => {
     cameras.forEach((cameraAction) => {
       cameraAction.CameraAction!.play().paused = true;
     });
-    setBg(items.find((item) => item.key == ChocolateTypes.title)!.bg);
+    setBg(items.find((item) => item.key == "title")!.bg);
 
     const camera = CamerasMap.get(ChocolateTypes.title);
     if (!camera) return;

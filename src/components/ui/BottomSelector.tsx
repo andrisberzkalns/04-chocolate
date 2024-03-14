@@ -17,7 +17,7 @@ export const BottomSelector: React.FC = () => {
     mini?: boolean;
     label?: string;
     onClick?: () => void;
-  }> = ({ label, selected = false, mini = false, onClick = () => {} }) => {
+  }> = ({ label, selected = false, mini = false, onClick }) => {
     return (
       <div
         onClick={onClick}
